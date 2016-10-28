@@ -8,6 +8,6 @@ module.exports = {
     nbPostsPerPage: 3,
     postsDirectory: path.join(__dirname, 'posts'),
     publicDirectory: path.join(__dirname, 'public'),
-    // disqusId: 'blog-castiel-me',
-    // analyticsId: 'UA-86125196-1'
+    disqusId: 'blog-castiel-me',
+    analyticsId: 'UA-86441091-1'
 };
