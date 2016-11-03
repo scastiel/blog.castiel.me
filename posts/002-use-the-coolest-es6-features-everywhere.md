@@ -149,5 +149,5 @@ You've done it! Now you can write all your JavaScript, both back-end and front-e
 By the way, the example app for this article is [available on GitHub](https://github.com/scastiel/hello-babel) :)
 
 To go further:
-* Using [Webpack](https://webpack.github.io/) can really change your life when dealing large front-end applications with several JavaScript files, and of course using Babel with it is supported.
+* Using [Webpack](https://webpack.github.io/) can really change your life when dealing with large front-end applications with several JavaScript files, and of course using Babel with it is supported.
 * [Babel website](http://babeljs.io/docs/plugins/) lists all available language features and which *preset* you must install to use them.
