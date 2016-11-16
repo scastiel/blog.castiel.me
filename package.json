@@ -6,6 +6,6 @@
   },
   "dependencies": {
     "http-server": "^0.9.0",
-    "miblog": "^2.2.0"
+    "miblog": "^2.2.1"
   }
 }
