@@ -36,11 +36,11 @@ If you develop with JavaScript there's no way you haven't heard of ES2015+ (or E
 function doSomething() {
   const a = doSomethingElse()
   const b = doSomethingWithA(a)
-  const otherResults = { c: 😺, d: 🐶 }
+  const otherResults = { c: '😺', d: '🐶' }
   return { a, b, ...otherResults } // equivalent to { a: a, b: b }
 }
 const { a, c, ...rest } = doSomething() // Also works with arrays!
-// `rest` looks like { b: ..., d: 🐶 }
+// `rest` looks like { b: ..., d: '🐶' }
 ```
 
 * making promises easier to use with `async/await`:
@@ -68,8 +68,9 @@ Very hype right now, functional programming is gaining a lot of success recently
 First stop using *for* loops. In most (every?) case you don't need them. For instance:
 
 ```js
-// Instead of:
 const arr = [{ name: 'first', value: 13 }, { name: 'second', value: 7 }]
+
+// Instead of:
 const res = {}
 for (let i = 0; i < arr.length; i++) {
   const calculatedValue = arr[i].value * 10
