@@ -16,5 +16,6 @@ deploy:
   name: Sébastien Castiel
   skip_cleanup: true
   github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
+  fqdn: blog.castiel.me
   on:
     branch: master
