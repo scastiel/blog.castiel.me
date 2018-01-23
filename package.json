@@ -1,11 +1,15 @@
 {
   "scripts": {
-    "clean": "rm -rf dist/*",
-    "generate": "miblog dist",
-    "start": "http-server dist -p 3000"
+    "clean": "rm -rf dist",
+    "build": "miblog dist",
+    "dev-server": "http-server dist -p ${PORT:-3000}",
+    "start": "PORT=${PORT:-3000} nodemon -w posts -w public -x 'npm run build && npm run dev-server'"
+  },
+  "devDependencies": {
+    "http-server": "^0.9.0",
+    "nodemon": "^1.14.11"
   },
   "dependencies": {
-    "http-server": "^0.9.0",
     "miblog": "2.2.3"
   }
 }
