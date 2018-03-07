@@ -1,0 +1,170 @@
+<!DOCTYPE html><html><head><title>Bootstrap a Reason-React project with Parcel – Another webdev blog</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://blog.castiel.me/css/app.css"><link rel="alternate" type="application/rss+xml" title="Another webdev blog" href="https://blog.castiel.me/rss.xml"></head><body><header class="blog-header"><h1 class="blog-title"><a href="https://blog.castiel.me/">Another webdev blog</a></h1><div class="blog-description"><p>I&#39;m <a href="https://twitter.com/scastiel">Sébastien Castiel</a>, and I talk about web development and some other stuff.</p>
+</div></header><article><header><h2><a href="https://blog.castiel.me/posts/007-reason-react-parcel.html">Bootstrap a Reason-React project with Parcel</a></h2><div class="infos"><time datetime="2018-03-07T06:00:00.000Z">Mar 7, 2018</time></div></header><div class="content"><p>Not that long ago I used Create-React-App a lot to quickly boostrap my React
+projects. That’s why I naturally used
+<a href="https://github.com/reasonml-community/reason-scripts">Reason Scripts</a> when I
+wanted to use Reason-React. But even if I still understand the advantages of the
+approach of CRA and Reason Scripts, I recently discovered
+<a href="https://parceljs.org/">Parcel</a>, a very minimalist bundler for web projects.</p>
+<p>There are already a lot of articles explaining the advantages of Parcel, and
+<a href="http://blog.jakoblind.no/react-parcel/">how to use it with React</a> for instance.
+What I wanted to do here is show you how you can use it to start a new project
+with <a href="https://reasonml.github.io/">Reason</a> first, then add
+<a href="https://github.com/reasonml/reason-react">Reason-React</a> to write React
+components.</p>
+<!--readmore-->
+<p><em>TL;DR: I created a
+<a href="https://github.com/scastiel/parcel-reason-react">project on GitHub</a> containing
+the final code for the article, if you just want to see the final result.</em></p>
+<h2 id="start-a-basic-parcel-project">Start a basic Parcel project</h2>
+<p>First, let’s init a new project with Yarn (NPM should work just fine too) and
+add Parcel:</p>
+<pre><code class="lang-bash">$ mkdir reason-parcel &amp;&amp; <span class="hljs-built_in">cd</span> reason-parcel
+$ yarn init -y
+$ yarn add --dev parcel-bundler
+</code></pre>
+<p>Let’s edit the generated <em>package.json</em> to add the <code>start</code> script:</p>
+<pre><code class="lang-json">{
+  <span class="hljs-attr">"name"</span>: <span class="hljs-string">"reason-parcel"</span>,
+  <span class="hljs-attr">"version"</span>: <span class="hljs-string">"1.0.0"</span>,
+  <span class="hljs-attr">"main"</span>: <span class="hljs-string">"index.js"</span>,
+  <span class="hljs-attr">"license"</span>: <span class="hljs-string">"MIT"</span>,
+  <span class="hljs-attr">"scripts"</span>: {
+    <span class="hljs-attr">"start"</span>: <span class="hljs-string">"parcel public/index.html"</span>
+  },
+  <span class="hljs-attr">"devDependencies"</span>: {
+    <span class="hljs-attr">"parcel-bundler"</span>: <span class="hljs-string">"^1.6.2"</span>
+  }
+}
+</code></pre>
+<p>Then let’s create our <em>public/index.html</em> file:</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"../src/index.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+<p>And finally let’s add a <code>src/index.js</code> file so we can test our first version:</p>
+<pre><code class="lang-js"><span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Hello from JavaScript!'</span>);
+</code></pre>
+<p>To start the project, let’s just run <code>yarn start</code>:</p>
+<center><img src="/public/reason-parcel-01.png" alt="Hello from JavaScript!"></center>
+
+<h2 id="add-reason">Add Reason</h2>
+<p>Okay this was basically the tutorial to start a Parcel project, but where is
+Reason? Let’s start by adding <code>bs-platform</code> dependency to the project:</p>
+<pre><code class="lang-bash">$ yarn add bs-platform
+</code></pre>
+<p>We’ll need a <code>bsconfig.json</code> file to tell BuckleScript what to do:</p>
+<pre><code class="lang-json">{
+  <span class="hljs-attr">"name"</span>: <span class="hljs-string">"reason-parcel"</span>,
+  <span class="hljs-attr">"refmt"</span>: <span class="hljs-number">3</span>,
+  <span class="hljs-attr">"sources"</span>: <span class="hljs-string">"src"</span>,
+  <span class="hljs-attr">"dependencies"</span>: [],
+  <span class="hljs-attr">"package-specs"</span>: {
+    <span class="hljs-attr">"module"</span>: <span class="hljs-string">"commonjs"</span>,
+    <span class="hljs-attr">"in-source"</span>: <span class="hljs-literal">true</span>
+  },
+  <span class="hljs-attr">"suffix"</span>: <span class="hljs-string">".bs.js"</span>
+}
+</code></pre>
+<p>We are telling BuckleScript to compile Reason files to JavaScript in the same
+directory, with <code>.bs.js</code>, so our <em>src/index.re</em> will be compiled to
+<em>src/index.bs.js</em>. This way Parcel will be able to deal with them natively.</p>
+<p>Let’s create this <em>src/index.re</em> file (by renaming <em>src/index.js</em> file to
+<em>src/index.re</em>) and set its content to:</p>
+<pre><code class="lang-reason"><span class="hljs-type">Js</span>.log(<span class="hljs-string">"Hello from Reason!"</span>);
+</code></pre>
+<p>We also need to update our <em>public/index.html</em> with the new path of the main
+file, which is now written in Reason:</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"../src/index.re"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+</code></pre>
+<p>Let’s start our app now:</p>
+<center><img src="/public/reason-parcel-02.png" alt="Hello from Reason!"></center>
+
+<p>There it is! Only one command to run the project including Reason to JavaScript
+transpilation! 😁</p>
+<h2 id="add-reason-react">Add Reason-React</h2>
+<p>Last step now: adding Reason-React to the project so you can write your
+components in Reason. First we need to add the dependency:</p>
+<pre><code class="lang-bash">yarn add reason-react
+</code></pre>
+<p>We also need to update <em>bsconfig.json</em> to tell BuckleScript we’ll use
+Reason-React and JSX:</p>
+<pre><code class="lang-json">{
+  <span class="hljs-attr">"name"</span>: <span class="hljs-string">"reason-parcel"</span>,
+  <span class="hljs-attr">"refmt"</span>: <span class="hljs-number">3</span>,
+  <span class="hljs-attr">"sources"</span>: <span class="hljs-string">"src"</span>,
+  <span class="hljs-attr">"bs-dependencies"</span>: [<span class="hljs-string">"reason-react"</span>],
+  <span class="hljs-attr">"reason"</span>: {
+    <span class="hljs-attr">"react-jsx"</span>: <span class="hljs-number">2</span>
+  },
+  <span class="hljs-attr">"dependencies"</span>: [],
+  <span class="hljs-attr">"package-specs"</span>: {
+    <span class="hljs-attr">"module"</span>: <span class="hljs-string">"commonjs"</span>,
+    <span class="hljs-attr">"in-source"</span>: <span class="hljs-literal">true</span>
+  },
+  <span class="hljs-attr">"suffix"</span>: <span class="hljs-string">".bs.js"</span>
+}
+</code></pre>
+<p>Now let’s create a simple component in <em>src/Greeting.re</em>:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> component = <span class="hljs-type">ReasonReact</span>.statelessComponent(<span class="hljs-string">"Greeting"</span>);
+
+<span class="hljs-keyword">let</span> make = (~name, _children) =&gt; {
+  ...component,
+  render: (_self) =&gt;
+    &lt;div&gt;
+      (<span class="hljs-type">ReasonReact</span>.stringToElement(<span class="hljs-string">"Hello "</span>))
+      &lt;strong&gt; (<span class="hljs-type">ReasonReact</span>.stringToElement(name)) &lt;/strong&gt;
+      (<span class="hljs-type">ReasonReact</span>.stringToElement(<span class="hljs-string">"!"</span>))
+    &lt;/div&gt;
+};
+</code></pre>
+<p>Let’s use it in <em>src/index.re</em>:</p>
+<pre><code class="lang-reason"><span class="hljs-type">ReactDOMRe</span>.renderToElementWithId(&lt;<span class="hljs-type">Greeting</span> name=<span class="hljs-string">"Sebastien"</span> /&gt;, <span class="hljs-string">"root"</span>);
+</code></pre>
+<p>And finally let’s add a <code>root</code> div to our <em>public/index.html</em> to render our
+component:</p>
+<pre><code class="lang-html"><span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"root"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+  <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"../src/index.re"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+<p>Wow that’s it! Easy right? Here is what you should get in your browser:</p>
+<center><img src="/public/reason-parcel-03.png" alt="Hello from Reason!"></center>
+
+<p>Now you’re ready to use React to build powerful and maintainable components and
+enjoy the possibilities of Reason in the same time. Of course it isn’t the only
+way to do so, but I like how elegant the method with Parcel is.</p>
+<p>I’d be curious to know if you see improvements to this workflow. Maybe using
+Parcel <a href="https://parceljs.org/packagers.html">packagers</a> or
+<a href="https://parceljs.org/plugins.html">plugins</a> could make it even cleaner? 😉</p>
+<p>Some resources:</p>
+<ul>
+<li><a href="https://reasonml.github.io">Reason</a>,
+<a href="https://reasonml.github.io/reason-react/">Reason-React</a>,
+<a href="https://github.com/reasonml-community/reason-scripts">Reason-Scripts</a>
+websites will show you how to create a Reason-React app the &quot;official&quot; way.</li>
+<li><a href="https://parceljs.org">Parcel</a>’s website has
+<a href="https://parceljs.org/recipes.html">a page showing how to use React with it</a>,
+and recommends an <a href="http://blog.jakoblind.no/react-parcel/">detailled article</a>.</li>
+<li>You’ll also find on Parcel website the
+<a href="https://parceljs.org/transforms.html#reasonml/bucklescript">documentation to use Reason with it</a>.</li>
+</ul>
+</div></article><div id="disqus_thread"></div><script>var disqus_config = function () {
+    this.page.url = 'https://blog.castiel.me/posts/007-reason-react-parcel';  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = '007-reason-react-parcel'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() {
+    var d = document, s = d.createElement('script');
+    s.src = '//blog-castiel-me.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+})();</script><footer class="blog-footer"><p>All content distributed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> license. Powered by <a href="https://github.com/scastiel/miblog">Miblog</a>.</p>
+</footer><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-86441091-1', 'auto');
+ga('send', 'pageview');</script></body></html>

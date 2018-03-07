@@ -1,0 +1,119 @@
+<!DOCTYPE html><html><head><title>Writing modern JavaScript code – Another webdev blog</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://blog.castiel.me/css/app.css"><link rel="alternate" type="application/rss+xml" title="Another webdev blog" href="https://blog.castiel.me/rss.xml"></head><body><header class="blog-header"><h1 class="blog-title"><a href="https://blog.castiel.me/">Another webdev blog</a></h1><div class="blog-description"><p>I&#39;m <a href="https://twitter.com/scastiel">Sébastien Castiel</a>, and I talk about web development and some other stuff.</p>
+</div></header><article><header><h2><a href="https://blog.castiel.me/posts/004-writing-modern-javascript.html">Writing modern JavaScript code</a></h2><div class="infos"><time datetime="2017-05-17T20:39:30.111Z">May 17, 2017</time></div></header><div class="content"><p>Remember when JavaScript was a language used to make elements change on the page when the cursor was over them? These days are over, every language evolves over time, and so does the way wa use them. Look at the code you wrote one or two years ago: do you feel ashamed? If yes, this post is for you 🙂</p>
+<p>I&#39;ll try here to list some good practices to make your JavaScript code easier to write, read and maintain.</p>
+<!--readmore-->
+<h2 id="use-a-linter-that-can-format-your-code">Use a linter that can format your code</h2>
+<p>The first advice I&#39;m giving you is to use a linter that will check you respect some rules that make your code consistent from a file to another, especially if you&#39;re several developer to work on the same project: indentation, spaces in parenthesis, replace <code>==</code> by <code>===</code>…</p>
+<p>But more important, make your linter fix automatically your code for you when possible. <a href="http://eslint.org/">ESLint</a> does that very well (with the <code>--fix</code> option), and it&#39;s well-integrated with all major IDEs to auto-fix files on save.</p>
+<p>You can also use <a href="https://github.com/prettier/prettier">Prettier</a> which is more focused on formatting than linting, but the result is basically the same 😉</p>
+<p>Next point will help you chose what rules to use with your linter:</p>
+<h2 id="use-modern-rules-for-your-linter">Use modern rules for your linter</h2>
+<p>If you wonder what rules to want for your code, here is a hint: <a href="https://standardjs.com/">StandardJS</a>. It&#39;s a <strong>very</strong> strict linter that won&#39;t give you any choice in the rules, but each of them is more and more admitted by the community. Here are some examples:</p>
+<ul>
+<li>use 2 spaces for indentation (I used to use 4 spaces, but actually using 2 is quite nice)</li>
+<li>no semi-colon (very weird at the beginning, but few days later I couldn&#39;t go back)</li>
+<li>spaces after keywords (like <code>if</code>) and in curly braces, not inside parenthesis</li>
+<li>and <a href="https://standardjs.com/rules.html">a lot more</a>.</li>
+</ul>
+<p>StandardJS is a standalone Node module that can lint and fix your code, but if you want to use it in a big existing project and deactivate some rules (because some would need a lot of modifications), you can also use the <a href="https://github.com/feross/eslint-config-standard">ESLint predefined config</a>. For instance I deactivated the rules <a href="http://eslint.org/docs/rules/no-mixed-operators">no-mixed-operators</a> and <a href="https://github.com/benmosher/eslint-plugin-import/blob/master/docs/rules/no-webpack-loader-syntax.md">import/no-webpack-loader-syntax</a>.</p>
+<h2 id="use-es2015-new-features">Use ES2015+ new features</h2>
+<p>If you develop with JavaScript there&#39;s no way you haven&#39;t heard of ES2015+ (or ES6, ES7…) features. Here are the ones I couldn&#39;t live without anymore:</p>
+<ul>
+<li>arrow functions: writing functions like <code>x =&gt; x * 2</code> is very useful with functional programming (see next point)</li>
+<li>classes: stop using prototype functions, classes are so much cooler 😉 (but don&#39;t abuse, JavaScript is so much better than any object-oriented language)</li>
+<li>operations with arrays and objects:</li>
+</ul>
+<pre><code class="lang-js"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">doSomething</span>(<span class="hljs-params"></span>) </span>{
+  <span class="hljs-keyword">const</span> a = doSomethingElse()
+  <span class="hljs-keyword">const</span> b = doSomethingWithA(a)
+  <span class="hljs-keyword">const</span> otherResults = { <span class="hljs-attr">c</span>: <span class="hljs-string">'😺'</span>, <span class="hljs-attr">d</span>: <span class="hljs-string">'🐶'</span> }
+  <span class="hljs-keyword">return</span> { a, b, ...otherResults } <span class="hljs-comment">// equivalent to { a: a, b: b }</span>
+}
+<span class="hljs-keyword">const</span> { a, c, ...rest } = doSomething() <span class="hljs-comment">// Also works with arrays!</span>
+<span class="hljs-comment">// `rest` looks like { b: ..., d: '🐶' }</span>
+</code></pre>
+<ul>
+<li>making promises easier to use with <code>async/await</code>:</li>
+</ul>
+<pre><code class="lang-js"><span class="hljs-comment">// Please try to write the same code with classic promises ;)</span>
+<span class="hljs-keyword">async</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">doSomething</span>(<span class="hljs-params"></span>) </span>{
+  <span class="hljs-keyword">const</span> a = <span class="hljs-keyword">await</span> getValueForA()
+  <span class="hljs-keyword">const</span> b = <span class="hljs-keyword">await</span> getValueForBFromA(a)
+  <span class="hljs-keyword">const</span> [c, d] = <span class="hljs-keyword">await</span> <span class="hljs-built_in">Promise</span>.all([
+    <span class="hljs-comment">// parallel execution</span>
+    getValueForC(), getValueForDFromB(b)
+  ])
+  <span class="hljs-keyword">const</span> total = <span class="hljs-keyword">await</span> calculateTotal(a, b, c, d)
+  <span class="hljs-keyword">return</span> total / <span class="hljs-number">1000</span>
+}
+</code></pre>
+<p>Wonder how to use these fantastic features? <a href="https://blog.castiel.me/posts/002-use-the-coolest-es6-features-everywhere.html">One of my articles gives you some advice</a>! (By the way, with latest version of Node.js you probably won&#39;t need Babel anymore to use the greatest new features 😀)</p>
+<h2 id="use-functional-programming">Use functional programming</h2>
+<p>Very hype right now, functional programming is gaining a lot of success recently, not only in JavaScript. The reason? It makes the code more predictible, safer, deterministic, and a lot easier to maintain when you&#39;re used to it. Here are some simple advices:</p>
+<p>First stop using <em>for</em> loops. In most (every?) case you don&#39;t need them. For instance:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> arr = [{ <span class="hljs-attr">name</span>: <span class="hljs-string">'first'</span>, <span class="hljs-attr">value</span>: <span class="hljs-number">13</span> }, { <span class="hljs-attr">name</span>: <span class="hljs-string">'second'</span>, <span class="hljs-attr">value</span>: <span class="hljs-number">7</span> }]
+
+<span class="hljs-comment">// Instead of:</span>
+<span class="hljs-keyword">const</span> res = {}
+<span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; arr.length; i++) {
+  <span class="hljs-keyword">const</span> calculatedValue = arr[i].value * <span class="hljs-number">10</span>
+  <span class="hljs-keyword">if</span> (calculatedValue &gt; <span class="hljs-number">100</span>) {
+    res[arr[i].name] = calculatedValue
+  }
+}
+
+<span class="hljs-comment">// Prefer:</span>
+<span class="hljs-keyword">const</span> res = arr
+  .map(<span class="hljs-function"><span class="hljs-params">elem</span> =&gt;</span> ({ <span class="hljs-attr">name</span>: elem.name, <span class="hljs-attr">calculatedValue</span>: elem.value * <span class="hljs-number">10</span> }))
+  .filter(<span class="hljs-function"><span class="hljs-params">elem</span> =&gt;</span> elem.calculatedValue &gt; <span class="hljs-number">100</span>)
+  .reduce(<span class="hljs-function">(<span class="hljs-params">acc, elem</span>) =&gt;</span> ({
+    [elem.name]: calculatedValue,
+    ...acc
+  }), {})
+</code></pre>
+<p>Okay I admit this is a very extreme example, and if you&#39;re not used to functional programming it may look more complicated. Maybe we can simplify it:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> enrichElementWithCalculatedValue =
+  <span class="hljs-function"><span class="hljs-params">elem</span> =&gt;</span> ({ <span class="hljs-attr">name</span>: elem.name, <span class="hljs-attr">calculatedValue</span>: elem.value * <span class="hljs-number">10</span> })
+<span class="hljs-keyword">const</span> filterElementsByValue = <span class="hljs-function"><span class="hljs-params">value</span> =&gt;</span>
+  elem =&gt; elem.calculatedValue &gt; value
+<span class="hljs-keyword">const</span> aggregateElementInObject = <span class="hljs-function">(<span class="hljs-params">acc, elem</span>) =&gt;</span> ({
+  [elem.name]: calculatedValue,
+  ...acc
+})
+<span class="hljs-keyword">const</span> res = arr
+  .map(enrichElementWithCalculatedValue)
+  .filter(filterElementsByValue(<span class="hljs-number">100</span>))
+  .reduce(aggregateElementInObject, {})
+</code></pre>
+<p>Here we defined three functions that basically exactly what their names say. Second advice: create local functions (even in existing functions) to document your code without comments!</p>
+<p>Note that the three local functions don&#39;t modify context they&#39;re executed in. No external variable is modified, no other service is called… In functional programming they&#39;re called <em>pure functions</em>. They have some great advantages:</p>
+<ul>
+<li>they&#39;re easilly testable because from given parameters, there is only one possible result, even if we call the function several time;</li>
+<li>they&#39;re guaranteed to give the same result no matter the actual state of the application;</li>
+<li>the application state stays the same before and after the function call.</li>
+</ul>
+<p>So my third advice: use pure functions a lot!</p>
+<h2 id="some-other-advices-to-finish">Some other advices to finish</h2>
+<ul>
+<li>get used to work with asynchronous code, use promises a lot, look at observales with <a href="http://reactivex.io/rxjs/">RxJS</a> (there is <a href="http://reactivex.io/learnrx/">a great tutorial about functional programming leading to reactive programming</a>)</li>
+<li>write tests! Should seem obvious, but I know a lot of projects have untested code, although testing JavaScript (front or backend) is not as difficult as it seems.</li>
+<li>use latests features of the language: for instance stop writing <code>arr.indexOf(elem) !== -1</code> in favor of <code>arr.includes(elem)</code>.</li>
+<li>read a lot of technical articles: the <a href="https://www.reddit.com/r/javascript/">JavaScript subreddit</a> is a very good source to know the coolest practices in the ecosystem.</li>
+</ul>
+<p>Oh and to conclude, the greatest advice I can give you: <strong>always refactor your code!</strong> Making improvements to a module you wrote one year ago? Take the opportunity to replace <code>var</code> with <code>const</code>, to use arrow functions or <code>async/await</code> to simplify the code… It&#39;s always nicer to work on code you like 😉</p>
+</div></article><div id="disqus_thread"></div><script>var disqus_config = function () {
+    this.page.url = 'https://blog.castiel.me/posts/004-writing-modern-javascript';  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = '004-writing-modern-javascript'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() {
+    var d = document, s = d.createElement('script');
+    s.src = '//blog-castiel-me.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+})();</script><footer class="blog-footer"><p>All content distributed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> license. Powered by <a href="https://github.com/scastiel/miblog">Miblog</a>.</p>
+</footer><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-86441091-1', 'auto');
+ga('send', 'pageview');</script></body></html>

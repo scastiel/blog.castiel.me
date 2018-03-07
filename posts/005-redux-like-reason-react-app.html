@@ -1,0 +1,242 @@
+<!DOCTYPE html><html><head><title>Create a simple and tested Redux-like app with Reason React – Another webdev blog</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://blog.castiel.me/css/app.css"><link rel="alternate" type="application/rss+xml" title="Another webdev blog" href="https://blog.castiel.me/rss.xml"></head><body><header class="blog-header"><h1 class="blog-title"><a href="https://blog.castiel.me/">Another webdev blog</a></h1><div class="blog-description"><p>I&#39;m <a href="https://twitter.com/scastiel">Sébastien Castiel</a>, and I talk about web development and some other stuff.</p>
+</div></header><article><header><h2><a href="https://blog.castiel.me/posts/005-redux-like-reason-react-app.html">Create a simple and tested Redux-like app with Reason React</a></h2><div class="infos"><time datetime="2017-08-24T10:36:00.000Z">Aug 24, 2017</time></div></header><div class="content"><p>In the past few weeks I&#39;ve become a big fan of <a href="https://reasonml.github.io/">Reason</a>, and in particular its association to React with <a href="https://reasonml.github.io/reason-react/">Reason React</a>. And because both Reason and Reason React are really young projects, there is not a lot of tutorials, StackOverflow questions, and documentation about it yet. So beginning a new project isn&#39;t as easy as the official website wants us think.</p>
+<p>But not only it&#39;s already possible, but it&#39;s also very exciting to use a purely functional language to create React applications. Let&#39;s see how we can do it.</p>
+<!--readmore-->
+<p>Of course I see a lot of advantages in using Reason for frontend development, but it&#39;s not what I want to talk about in this article. If you&#39;re reading it, you&#39;re probably already convinced (if not that&#39;s not a problem!). What I want to write is more very practical tutorial, hoping it will prevent some people to spend hours looking for the same answers I had to find.</p>
+<p>The tutorial is based on a very small (and useless) project I created, consisting of a counter with buttons to increment or decrement it (I told you it was useless). The idea was to create a React application with something like a Redux architecture (with state, actions and reducer), and associated unit tests.</p>
+<p>Also know that it will be easier to understand the tutorial if you already have some knowledge about Reason syntax, about Redux-like architecture (we&#39;ll keep it very simple here), and maybe also about React. Here are two articles that will introduce you to Reason and Reason React:</p>
+<ul>
+<li><a href="https://dev.to/kayis/a-reason-to-code">A Reason to code</a> by <a href="https://twitter.com/K4y1s">
+K 👓</a></li>
+<li><a href="https://jaredforsyth.com/2017/07/05/a-reason-react-tutorial/">A ReasonReact Tutorial</a> by <a href="https://twitter.com/jaredforsyth">Jared Forsyth</a></li>
+</ul>
+<p>Now let&#39;s begin! The complete project is available on <a href="https://github.com/scastiel/reason-react-example-app">GitHub</a>. Here is some information you may want to know before starting:</p>
+<ul>
+<li>The project was bootstrapped with the awesome <a href="https://github.com/facebookincubator/create-react-app">Create React App</a>, using <a href="https://github.com/reasonml-community/reason-scripts">Reason Scripts</a> as recommanded by <a href="https://reasonml.github.io/reason-react/gettingStarted.html#getting-started-reason-scripts">Reason React</a>.</li>
+<li>I didn&#39;t use the existing Redux-like library <a href="https://github.com/reasonml-community/reductive">Reductive</a> to manage the state of the application. It could have fit my needs, but it&#39;s still very young and lacks documentation. Maybe if it grows up it will be interessing to use it in a near future.</li>
+<li>The tests are written in JavaScript. Although it&#39;s possible to write them in Reason, <a href="https://github.com/reasonml-community/bs-jest">bs-jest</a> is still very &quot;experimental and work-in-progress&quot; (as they say themselves), and I wasn&#39;t able to achieve some things such as using mock functions. They seem to be implemented, but there is not any documentation of example anywhere. Again, in the future it will be interesting to write all tests directly in Reason.</li>
+</ul>
+<h2 id="describing-our-application-s-state">Describing our application&#39;s state</h2>
+<p>The state is basically a type, corresponding to the data we&#39;ll want to store in our app&#39;s state. If we want to store only an integer, we can define:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">type</span> state = int;
+</code></pre>
+<p>In our example app, we want to store a record composed by two fields:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">type</span> state = {
+  counter: int,
+  intervalId: option intervalId
+};
+</code></pre>
+<p>Note that the type name <code>state</code> is important, we&#39;ll see why later.</p>
+<p>In our <em>state.re</em> file, we also declare some utility functions to create and manipulate state. Actually they&#39;re mostly here to help writing our JavaScript tests, because in JavaScript we have no clue about how the record is stored.</p>
+<p>So as we won&#39;t be able to write something like this:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> state = { <span class="hljs-attr">counter</span>: <span class="hljs-number">0</span>, <span class="hljs-attr">intervalId</span>: <span class="hljs-number">123</span> }
+</code></pre>
+<p>... we&#39;ll write:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">const</span> state = setCounter(createState(), <span class="hljs-number">0</span>)
+</code></pre>
+<h2 id="defining-the-possible-actions">Defining the possible actions</h2>
+<h3 id="actions-definitions">Actions definitions</h3>
+<p>An action is composed by a type and parameters. For instance we could have an action with type <code>SetValue</code> and one parameter <code>10</code> if we want to set some state value to 10. Reason&#39;s <a href="https://reasonml.github.io/guide/language/variant">variant</a> type is exactly what we need; we can define all our possible actions in one variant type:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">type</span> action =
+  | <span class="hljs-type">Increment</span>
+  | <span class="hljs-type">Decrement</span>
+  | <span class="hljs-type">StartIncrementing</span> intervalId
+  | <span class="hljs-type">StopIncrementing</span>;
+</code></pre>
+<p>Again, to make testing in JavaScript easier, we also define some utility function and values:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> incrementAction = <span class="hljs-type">Increment</span>;
+<span class="hljs-keyword">let</span> decrementAction = <span class="hljs-type">Decrement</span>;
+<span class="hljs-keyword">let</span> startIncrementingAction intervalId =&gt; <span class="hljs-type">StartIncrementing</span> intervalId;
+<span class="hljs-keyword">let</span> stopIncrementingAction = <span class="hljs-type">StopIncrementing</span>;
+</code></pre>
+<p>This will be useful to create new actions (we don&#39;t have access to the variant type constructors in JavaScript), but also to compare some resulting action to some action we expect.</p>
+<h3 id="actions-creators">Actions creators</h3>
+<p>In our app, instead of using actions constructors, it&#39;s easier to create actions with utility functions. For instance to create an <code>Increment</code> action, we could use a function <code>increment</code>:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> increment =&gt; <span class="hljs-type">Increment</span>;
+<span class="hljs-keyword">let</span> setValue value =&gt; <span class="hljs-type">SetValue</span> value;
+
+<span class="hljs-keyword">let</span> incrementAction = increment;
+<span class="hljs-keyword">let</span> setValueTo10Action = setValue <span class="hljs-number">10</span>;
+</code></pre>
+<p>This doesn&#39;t look very useful for now, but let&#39;s imagine we want often want to increment our counter twice. We&#39;d like to write an action creator that will trigger two actions. To do that, we define that our action creators will take as last parameter a function, <code>dispatch</code>, that will be called to trigger an action:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> increment dispatch =&gt; dispatch <span class="hljs-type">Increment</span>;
+
+<span class="hljs-keyword">let</span> incrementTwice dispatch =&gt; {
+  dispatch <span class="hljs-type">Increment</span>;
+  dispatch <span class="hljs-type">Increment</span>;
+}
+</code></pre>
+<p>Furthermore, we can now write asynchronous action creators (with side effects), like HTTP requests, timeouts, etc.:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> incrementEverySecond dispatch =&gt; {
+  <span class="hljs-keyword">let</span> intervalId = setInterval (<span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> ()<span class="hljs-params"> </span></span></span>=&gt; increment dispatch) <span class="hljs-number">1000</span>;
+  startIncrementing intervalId dispatch
+};
+</code></pre>
+<p>We&#39;ll see later how these action creators will be called, but notice we define a type <code>deferredAction</code> (that will help us for type inference) corresponding to what action creators return when called without the <code>dispatch</code> parameter:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">type</span> deferredAction = (action =&gt; unit) =&gt; unit;
+
+<span class="hljs-comment">/* For instance `deferredAction` is the type of `increment`. */</span>
+</code></pre>
+<h2 id="writing-the-reducer">Writing the reducer</h2>
+<p>The reducer is a function that takes two parameters: the current state and an action, and returns the new state calculated from the action. Again to make type inference easier we defined a type:</p>
+<pre><code class="lang-reason">open <span class="hljs-type">State</span>;
+open <span class="hljs-type">Actions</span>;
+<span class="hljs-keyword">type</span> reducer = state =&gt; action =&gt; state;
+</code></pre>
+<p>Then we define our <code>reducer</code> function using pattern matching on the action type:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> reducer: reducer =
+  <span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> state<span class="hljs-params"> action<span class="hljs-params"> </span></span></span></span>=&gt;
+    <span class="hljs-keyword">switch</span> action {
+    | <span class="hljs-type">Increment</span> =&gt; {...state, counter: state.counter + <span class="hljs-number">1</span>}
+    | <span class="hljs-type">StartIncrementing</span> intervalId =&gt;
+      <span class="hljs-keyword">switch</span> state.intervalId {
+      | <span class="hljs-type">None</span> =&gt; {...state, intervalId: <span class="hljs-type">Some</span> intervalId}
+      | <span class="hljs-number">_</span> =&gt; state
+      }
+    };
+</code></pre>
+<h2 id="designing-the-react-component">Designing the React component</h2>
+<p>Our example application is composed by one main React component named <code>Counter</code>. We want it to be completely stateless, so we&#39;ll need to give it as parameters (props) the <em>state</em> (what values we want to show or use) and the <em>actions</em>, as functions that will be called on some events (clicks on buttons).</p>
+<p>Here is a simplified version of the component:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> component = <span class="hljs-type">ReasonReact</span>.statelessComponent <span class="hljs-string">"Counter"</span>;
+
+<span class="hljs-keyword">let</span> make
+    counter::(counter: int)
+    increment::(increment: unit =&gt; unit)
+    _children =&gt; {
+  ...component,
+  render: <span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> <span class="hljs-keyword">self</span><span class="hljs-params"> </span></span></span>=&gt;
+    &lt;div&gt;
+      (<span class="hljs-type">ReasonReact</span>.stringToElement (<span class="hljs-string">"Counter: "</span> ^ string_of_int counter))
+      &lt;button className=<span class="hljs-string">"plus-button"</span> onClick=(<span class="hljs-keyword">self</span>.handle (<span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> <span class="hljs-number">_</span><span class="hljs-params"> <span class="hljs-number">_</span><span class="hljs-params"> </span></span></span></span>=&gt; increment ()))&gt;
+        (<span class="hljs-type">ReasonReact</span>.stringToElement <span class="hljs-string">"+"</span>)
+      &lt;/button&gt;
+    &lt;/div&gt;
+};
+</code></pre>
+<p>Notice the type of <code>increment</code> prop: it&#39;s a function that returns nothing (<code>unit</code>). We don&#39;t have knowledge of the actions we created before, we just have a function that we must call when needed, with a weird syntax needed by Reason React: <code>self.handle (fun _ _ =&gt; increment ())</code>. Imagine how it will make unit testing easier!</p>
+<h2 id="linking-all-pieces">Linking all pieces</h2>
+<p>Now that we have our state definitions, our actions with their creators, our reducer and a component to display and act with all these pieces, we need to assembly all that.</p>
+<p>Let&#39;s begin with the main file of the app, <em>index.re</em>. It first defines a function <code>createComponent</code>:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> createComponent state dispatch =&gt; &lt;<span class="hljs-type">CounterApp</span> state dispatch /&gt;;
+</code></pre>
+<p>This function takes as first parameter a state, and as a second parameter a function <code>dispatch</code>. It returns a new instance of a component named <code>CounterApp</code>, that we&#39;ll see in a few minutes, giving it both parameters <code>state</code> and <code>dispatch</code>.</p>
+<p>We give this function as parameter to another component, <code>Provider</code>:</p>
+<pre><code class="lang-reason"><span class="hljs-type">ReactDOMRe</span>.renderToElementWithId
+  &lt;<span class="hljs-type">Provider</span> reducer initialState=(createState ()) createComponent /&gt; <span class="hljs-string">"root"</span>;
+</code></pre>
+<p>This <code>Provider</code> component is what will handle the lifecycle of our application. Without going deep in the details (see module <em>providerFactory</em> to know more), it creates a component with a state (the current state of the application) and updates this state when actions are emitted, using the reducer. It&#39;s basically a reimplementation of what <em>redux-react</em> does, in a quite simpler and more minimalistic way.</p>
+<p>Also notice that <em>Provider</em> component is created by calling the module <em>ProviderFactory.MakeProvider</em> with as parameter another module: <code>State</code>, which contains the type of our state: <code>state</code>. That&#39;s why our state type needed to be called <code>state</code>; the <em>ProviderFactory</em> module isn&#39;t aware of our state, it could even be in a separate project, so it&#39;s useful to make it generic about the state type, as it is with the encapsulated component thanks to <code>createComponent</code> parameter.</p>
+<p>Finally, we need the <code>CounterApp</code> component, that will be the link between the provider and the <code>Counter</code> component. Its two props are the current state of the app, and a <code>dispatch</code> function that will be called to emit actions:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> component = <span class="hljs-type">ReasonReact</span>.statelessComponent <span class="hljs-string">"CounterApp"</span>;
+
+<span class="hljs-keyword">let</span> make state::(state: state) dispatch::(dispatch: deferredAction =&gt; unit) _children =&gt; {
+  ...component,
+  render: <span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> <span class="hljs-number">_</span><span class="hljs-params"> </span></span></span>=&gt; {
+    <span class="hljs-keyword">let</span> onIncrement () =&gt; dispatch increment;
+    &lt;<span class="hljs-type">Counter</span>
+      counter=state.counter
+      increment=onIncrement
+    /&gt;
+  }
+};
+</code></pre>
+<p>And because <code>Counter</code> needs a plain function (<code>unit =&gt; unit</code>) as <code>increment</code> parameter, we create it by calling <code>dispatch</code>:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> onIncrement () =&gt; dispatch increment;
+</code></pre>
+<h2 id="writing-unit-tests">Writing unit tests</h2>
+<p>Now that our application is working, we can think about how to write unit tests for each part. If you are comfortable writing tests for React components, it shouldn&#39;t be too hard to make the transition. There are just some things to know about using Reason&#39;s things (components, functions…) in plain JavaScript.</p>
+<h3 id="reducer">Reducer</h3>
+<p>Testing the reducer is the easiest part: it&#39;s a pure function, we just have to test that given a state and an action, we get the expected new state.</p>
+<p>For instance, here is how <code>Increment</code> action is tested:</p>
+<pre><code class="lang-js">describe(<span class="hljs-string">'with Increment action'</span>, () =&gt; {
+  it(<span class="hljs-string">'increments counter'</span>, () =&gt; {
+    <span class="hljs-keyword">const</span> state = setCounter(createState(), <span class="hljs-number">0</span>)
+    <span class="hljs-keyword">const</span> newState = reducer(state, incrementAction)
+    expect(newState).toEqual(setCounter(state, <span class="hljs-number">1</span>))
+  })
+})
+</code></pre>
+<p>Notice that we use our utility functions <code>setCounter</code> and <code>setState</code> because we are not able (at least not in a clean way) to create a state from scratch (see section about the state definition).</p>
+<h3 id="actions-creators">Actions creators</h3>
+<p>Testing actions creators is not more difficult as long as there are no side effects like timeouts, HTTP requests, etc.</p>
+<p>For instance to test <code>increment</code> action creator, we need to test that when called with a <code>dispatch</code> function (a Jest spy), this <code>dispatch</code> function will be called with an <code>Increment</code> action:</p>
+<pre><code class="lang-js">describe(<span class="hljs-string">'increment'</span>, () =&gt; {
+  it(<span class="hljs-string">'should call dispatch with Increment action'</span>, () =&gt; {
+    <span class="hljs-keyword">const</span> dispatch = jest.fn()
+    increment(dispatch)
+    expect(dispatch.mock.calls.length).toEqual(<span class="hljs-number">1</span>)
+    expect(dispatch.mock.calls[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>]).toEqual(incrementAction)
+  })
+})
+</code></pre>
+<p>Again notice that we have to use our utility value <code>incrementAction</code> to check if resulting value is an <code>Increment</code> action, because we don&#39;t know for sure how this variant type is converted in JavaScript.</p>
+<p>If the tested action creator is asynchronous, the process is exactly the same, and we&#39;ll use Jest ability to test asynchronous code with <code>async</code> functions (see <em>action.test.js</em> file for some examples).</p>
+<h3 id="component">Component</h3>
+<p>Testing components is really easy, there is just one thing to know: Reason React components are not ready to use in JavaScript. To use Reason React components in JavaScript, you&#39;ll have to export a JS-friendy version of the component. For instance at the end of the <em>counter.re</em> file:</p>
+<pre><code class="lang-reason"><span class="hljs-keyword">let</span> counter =
+  <span class="hljs-type">ReasonReact</span>.wrapReasonForJs
+    ::component
+    (
+      <span class="hljs-func"><span class="hljs-keyword">fun</span><span class="hljs-params"> jsProps<span class="hljs-params"> </span></span></span>=&gt;
+        make
+          counter::jsProps##counter
+          increment::jsProps##increment
+          [||]
+    );
+</code></pre>
+<p>Now in test files (or any JavaScript file) we can import our component and use it as any React component:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">import</span> { counter <span class="hljs-keyword">as</span> Counter } <span class="hljs-keyword">from</span> <span class="hljs-string">'../counter.re'</span>
+</code></pre>
+<p>The testing part now remains the same as testing any React component, there are really no Reason-specific tricks to use. To prove it, here is how I tested my <code>Counter</code> component:</p>
+<h4 id="testing-rendering-with-snapshots">Testing rendering with snapshots</h4>
+<p>The easiest way to test that a component is well rendered given certain props is to use snapshots. For instance if we want to check that the counter&#39;s rendered element is okay with a counter of 0 or 10, we write:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">import</span> { shallow } <span class="hljs-keyword">from</span> <span class="hljs-string">'enzyme'</span>
+describe(<span class="hljs-string">'Counter component'</span>, () =&gt; {
+  it(<span class="hljs-string">'renders with value 0 without intervalId'</span>, () =&gt; {
+    <span class="hljs-keyword">const</span> wrapper = shallow(&lt;Counter counter={0} /&gt;)
+    expect(wrapper).toMatchSnapshot()
+  })
+
+  it('renders with value 10 without intervalId', () =&gt; {
+    const wrapper = shallow(&lt;Counter counter={10} /&gt;)
+    expect(wrapper).toMatchSnapshot()
+  })
+})
+</code></pre>
+<p>When launched for the first time, Jest will generate snapshot files, and next times it will compare that the rendered element is still the same.</p>
+<h4 id="testing-actions">Testing actions</h4>
+<p>To test that when a button is clicked, the correct function will be called, we&#39;ll use <em>enzyme</em> ability to simulate clicks and Jest mock functions. This is very easy:</p>
+<pre><code class="lang-js">it(<span class="hljs-string">'calls increment when plus button is clicked'</span>, () =&gt; {
+  <span class="hljs-keyword">const</span> increment = jest.fn()
+  <span class="hljs-keyword">const</span> wrapper = shallow(
+    <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">Counter</span> <span class="hljs-attr">counter</span>=<span class="hljs-string">{10}</span> <span class="hljs-attr">increment</span>=<span class="hljs-string">{increment}</span> /&gt;</span>
+  )
+  wrapper.find('.plus-button').simulate('click')
+  expect(increment.mock.calls.length).toEqual(1)
+})</span>
+</code></pre>
+<h2 id="what-s-next-">What&#39;s next?</h2>
+<p>Okay, now we know how to create a simple React component in Reason, with a Redux-like architecture and unit tests. If we take a look at what can React/Redux do, we can imagine a lot to implement next:</p>
+<ul>
+<li>a router for our application, based on its current state. Maybe even storing the state in local storage?</li>
+<li>orchestrate several more complex components, several reducers…</li>
+<li>using React Native! That would be amazing; I heard some people already succeed to do it 😉</li>
+</ul>
+<p>Reason is still a very young language, and its ecosystem is growing very fast, which is awesome. I already had to rewrite some parts of this tutorial because of new features or projects appeared since I started. No doubt it will continue 😃</p>
+</div></article><div id="disqus_thread"></div><script>var disqus_config = function () {
+    this.page.url = 'https://blog.castiel.me/posts/005-redux-like-reason-react-app';  // Replace PAGE_URL with your page's canonical URL variable
+    this.page.identifier = '005-redux-like-reason-react-app'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+(function() {
+    var d = document, s = d.createElement('script');
+    s.src = '//blog-castiel-me.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', +new Date());
+    (d.head || d.body).appendChild(s);
+})();</script><footer class="blog-footer"><p>All content distributed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> license. Powered by <a href="https://github.com/scastiel/miblog">Miblog</a>.</p>
+</footer><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-86441091-1', 'auto');
+ga('send', 'pageview');</script></body></html>
