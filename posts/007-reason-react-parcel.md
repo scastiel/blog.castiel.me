@@ -12,6 +12,8 @@ with [Reason](https://reasonml.github.io/) first, then add
 [Reason-React](https://github.com/reasonml/reason-react) to write React
 components.
 
+<!--readmore-->
+
 _TL;DR: I created a
 [project on GitHub](https://github.com/scastiel/parcel-reason-react) containing
 the final code for the article, if you just want to see the final result._
