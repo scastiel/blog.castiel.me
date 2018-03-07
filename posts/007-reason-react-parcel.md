@@ -82,48 +82,39 @@ We’ll need a `bsconfig.json` file to tell BuckleScript what to do:
   "name": "reason-parcel",
   "refmt": 3,
   "sources": "src",
-  "dependencies": []
+  "dependencies": [],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js"
 }
 ```
 
-Let’s rename out _src/index.js_ file to _src/index.re_ and change its content
-to:
+We are telling BuckleScript to compile Reason files to JavaScript in the same
+directory, with `.bs.js`, so our _src/index.re_ will be compiled to
+_src/index.bs.js_. This way Parcel will be able to deal with them natively.
+
+Let’s create this _src/index.re_ file (by renaming _src/index.js_ file to
+_src/index.re_) and set its content to:
 
 ```reason
 Js.log("Hello from Reason!");
 ```
 
-To compile the Reason files to JavaScript let’s add the `build` command to our
-_package.json_:
-
-```json
-  "scripts": {
-    "start": "parcel public/index.html",
-    "build": "bsb -make-world"
-  },
-```
-
-Now by running `yarn build`, our _index.re_ file will be transpiled to
-JavaScript in _lib/js/src/index.js_. So we need to update our
-_public/index.html_ with the new path:
+We also need to update our _public/index.html_ with the new path of the main
+file, which is now written in Reason:
 
 ```html
-<script src="../lib/js/src/index.js"></script>
+<script src="../src/index.re"></script>
 ```
 
 Let’s start our app now:
 
 <center>![Hello from Reason!](/public/reason-parcel-02.png)</center>
 
-There it is! The workflow is not ideal since you need to start two commands in
-different terminals to run your project:
-
-* `yarn build -w` to transpile Reason to JavaScript (the `-w` flag starts the
-  _watch_ mode) ;
-* `yarn start` to bundle files with Parcel.
-
-If you know a way to make this easier I’d be glad to hear it and update the
-article 😉.
+There it is! Only one command to run the project including Reason to JavaScript
+transpilation! 😁
 
 ## Add Reason-React
 
@@ -146,7 +137,12 @@ Reason-React and JSX:
   "reason": {
     "react-jsx": 2
   },
-  "dependencies": []
+  "dependencies": [],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js"
 }
 ```
 
@@ -179,7 +175,7 @@ component:
 <html>
 <body>
   <div id="root"></div>
-  <script src="../lib/js/src/index.js"></script>
+  <script src="../src/index.re"></script>
 </body>
 </html>
 ```
@@ -205,3 +201,5 @@ Some resources:
 * [Parcel](https://parceljs.org)’s website has
   [a page showing how to use React with it](https://parceljs.org/recipes.html),
   and recommends an [detailled article](http://blog.jakoblind.no/react-parcel/).
+* You’ll also find on Parcel website the
+  [documentation to use Reason with it](https://parceljs.org/transforms.html#reasonml/bucklescript).
